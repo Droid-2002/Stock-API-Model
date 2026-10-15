@@ -93,6 +93,20 @@ public class AcaoTests
         Registrar(acao, Hoje.AddDays(-2), 39m);
 
         Assert.Equal(2, acao.Cotacoes.Count);
+        var antiga = Assert.Single(acao.Cotacoes, c => c.Data == Hoje.AddDays(-2));
+        Assert.Equal(39m, antiga.Fechamento);
+    }
+
+    [Fact]
+    public void RegistrarCotacao_NaMesmaDataComValoresInvalidos_MantemCotacaoOriginal()
+    {
+        var acao = CriarAcao();
+        Registrar(acao, Hoje, 38m);
+
+        Assert.Throws<DomainException>(() => Registrar(acao, Hoje, -1m));
+
+        var unica = Assert.Single(acao.Cotacoes);
+        Assert.Equal(38m, unica.Fechamento);
     }
 
     [Fact]

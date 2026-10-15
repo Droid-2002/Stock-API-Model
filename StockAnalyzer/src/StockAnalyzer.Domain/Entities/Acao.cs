@@ -13,14 +13,14 @@ public sealed class Acao
     public string Nome { get; private set; } = string.Empty;
     public IReadOnlyCollection<Cotacao> Cotacoes => _cotacoes.AsReadOnly();
 
-    public Cotacao? UltimaCotacao => _cotacoes.OrderBy(c => c.Data).FirstOrDefault();
+    public Cotacao? UltimaCotacao => _cotacoes.MaxBy(c => c.Data);
 
     private Acao() { } // EF Core
 
     public Acao(Ticker ticker, string? nome)
     {
         Ticker = ticker ?? throw new ArgumentNullException(nameof(ticker));
-        Nome = NormalizarNome(nome, ticker);    
+        Nome = NormalizarNome(nome, ticker);
     }
 
     public void AlterarNome(string? nome)
@@ -38,8 +38,8 @@ public sealed class Acao
             existente.Atualizar(abertura, maxima, minima, fechamento, volume);
             return existente;
         }
-        //       se não   → new Cotacao(...), adiciona na lista e retorna
-        Cotacao cotacao = new Cotacao(data, abertura, maxima, minima, fechamento, volume);
+
+        var cotacao = new Cotacao(data, abertura, maxima, minima, fechamento, volume);
         _cotacoes.Add(cotacao);
         return cotacao;
     }
