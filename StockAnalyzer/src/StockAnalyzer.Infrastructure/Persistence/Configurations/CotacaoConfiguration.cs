@@ -14,8 +14,8 @@ internal sealed class CotacaoConfiguration : IEntityTypeConfiguration<Cotacao>
         builder.HasIndex("AcaoId", nameof(Cotacao.Data)).IsUnique();
 
         builder.Property(c => c.Abertura).HasPrecision(18, 4);
-        builder.Property(c => c.Máxima).HasPrecision(18, 4);
-        builder.Property(c => c.Mínima).HasPrecision(18, 4);
+        builder.Property(c => c.Maxima).HasPrecision(18, 4);
+        builder.Property(c => c.Minima).HasPrecision(18, 4);
         builder.Property(c => c.Fechamento).HasPrecision(18, 4);
     }
 }
