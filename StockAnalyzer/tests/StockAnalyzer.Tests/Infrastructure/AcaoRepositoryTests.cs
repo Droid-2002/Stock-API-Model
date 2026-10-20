@@ -39,39 +39,38 @@ public sealed class AcaoRepositoryTests : IDisposable
             Assert.Equal(38.5m, cotacao.Fechamento);
         }
     }
-   
-   
+
     [Fact]
     public async Task ObterPorTicker_Inexistente_RetornaNull()
-        {
-            // Arrange
-            await using var contexto = _banco.CriarContexto();
-            var repositorio = new AcaoRepository(contexto);
+    {
+        // Arrange
+        await using var contexto = _banco.CriarContexto();
+        var repositorio = new AcaoRepository(contexto);
 
-            // Act
-            var acao = await repositorio.ObterPorTickerAsync(new Ticker("PETR4"));
+        // Act
+        var acao = await repositorio.ObterPorTickerAsync(new Ticker("PETR4"));
 
-            // Assert
-            Assert.Null(acao);
-        }
+        // Assert
+        Assert.Null(acao);
+    }
+
     [Fact]
     public async Task Salvar_ComTickerDuplicado_LancaDbUpdateException()
-        {
+    {
+        // Arrange
+        await using var contexto = _banco.CriarContexto();
+        var repositorio = new AcaoRepository(contexto);
 
-            await using var contexto = _banco.CriarContexto();
-            var repositorio = new AcaoRepository(contexto);
+        var acao1 = new Acao(new Ticker("PETR4"), "Petrobras");
+        repositorio.Adicionar(acao1);
+        await repositorio.SalvarAsync();
 
-            // Arrange
-            var acao1 = new Acao(new Ticker("PETR4"), "Petrobras");
-            repositorio.Adicionar(acao1);
-            await repositorio.SalvarAsync();
+        var acao2 = new Acao(new Ticker("PETR4"), "Petrobras");
+        repositorio.Adicionar(acao2);
 
-            var acao2 = new Acao(new Ticker("PETR4"), "Petrobras");
-            repositorio.Adicionar(acao2);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<DbUpdateException>(() => repositorio.SalvarAsync());
-        }
+        // Act & Assert
+        await Assert.ThrowsAsync<DbUpdateException>(() => repositorio.SalvarAsync());
+    }
 
     [Fact]
     public async Task RegistrarCotacao_EmAcaoCarregada_NaMesmaData_AtualizaSemDuplicar()
@@ -84,7 +83,8 @@ public sealed class AcaoRepositoryTests : IDisposable
             acao.RegistrarCotacao(Hoje, abertura: 38m, maxima: 39m,
                                   minima: 37m, fechamento: 38.5m, volume: 1000);
             repositorio.Adicionar(acao);
-            await repositorio.SalvarAsync();        }
+            await repositorio.SalvarAsync();
+        }
 
         // Contexto 2: segunda importação, mesmo dia
         await using (var contexto = _banco.CriarContexto())
@@ -94,26 +94,43 @@ public sealed class AcaoRepositoryTests : IDisposable
             Assert.NotNull(acao);
 
             acao.RegistrarCotacao(Hoje, abertura: 38m, maxima: 39.5m,
-            minima: 37m, fechamento: 39.5m, volume: 1000);            // TODO: salvar (sem Adicionar, lembre por quê)
+                                  minima: 37m, fechamento: 39.5m, volume: 1000);
             await repositorio.SalvarAsync();
-
         }
-
 
         // Contexto 3: conferência
         await using (var contexto = _banco.CriarContexto())
         {
-            // TODO: Obter a ação do contexto
-            await using var contexto1 = _banco.CriarContexto();
-            var repositorio = new AcaoRepository(contexto1);
+            var repositorio = new AcaoRepository(contexto);
             var acao = await repositorio.ObterPorTickerAsync(new Ticker("PETR4"));
             Assert.NotNull(acao);
 
             var cotacao = Assert.Single(acao.Cotacoes);
-            
-            Assert.Single(acao.Cotacoes);// TODO: Assert.Single nas cotações
             Assert.Equal(39.5m, cotacao.Fechamento);
-            // TODO: Assert.Equal(39m, cotacao.Fechamento)
+        }
+    }
+
+    [Fact]
+    public async Task ListarAsync_RetornaTodasOrdenadasPorTicker()
+    {
+        // Arrange: contexto 1, fora da ordem alfabética
+        await using (var contexto = _banco.CriarContexto())
+        {
+            var repositorio = new AcaoRepository(contexto);
+            repositorio.Adicionar(new Acao(new Ticker("VALE3"), "Vale"));
+            repositorio.Adicionar(new Acao(new Ticker("ITUB4"), "Itaú Unibanco"));
+            repositorio.Adicionar(new Acao(new Ticker("PETR4"), "Petrobras"));
+            await repositorio.SalvarAsync();
+        }
+
+        // Act + Assert: contexto 2
+        await using (var contexto = _banco.CriarContexto())
+        {
+            var repositorio = new AcaoRepository(contexto);
+
+            var acoes = await repositorio.ListarAsync();
+
+            Assert.Equal(new[] { "ITUB4", "PETR4", "VALE3" }, acoes.Select(a => a.Ticker.Valor));
         }
     }
 }
