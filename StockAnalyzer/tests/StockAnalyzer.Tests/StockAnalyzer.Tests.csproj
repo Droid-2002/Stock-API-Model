@@ -19,5 +19,8 @@
     <ProjectReference Include="..\..\src\StockAnalyzer.Domain\StockAnalyzer.Domain.csproj" />
     <ProjectReference Include="..\..\src\StockAnalyzer.Infrastructure\StockAnalyzer.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>
